@@ -104,6 +104,40 @@ export default function CMSSettingsForm() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Team Section</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Section headline</Label>
+            <Input
+              value={form.teamHeadline}
+              onChange={(e) => setForm({ ...form, teamHeadline: e.target.value })}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label>Section description</Label>
+            <textarea
+              rows={2}
+              value={form.teamSubheadline}
+              onChange={(e) => setForm({ ...form, teamSubheadline: e.target.value })}
+              className="mt-1.5 w-full rounded-lg border border-factify-gray px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-factify-gold resize-none"
+            />
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.showTeamOnHome}
+              onChange={(e) => setForm({ ...form, showTeamOnHome: e.target.checked })}
+              className="h-4 w-4 rounded border-factify-gray text-factify-gold focus:ring-factify-gold"
+            />
+            <span className="text-sm text-factify-navy">Show leadership team on the home page</span>
+          </label>
+        </CardContent>
+      </Card>
+
       <Button onClick={handleSave}>
         <Save className="h-4 w-4" />
         {saved ? 'Saved!' : 'Save Settings'}

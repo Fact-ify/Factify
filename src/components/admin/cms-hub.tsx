@@ -8,6 +8,7 @@ import {
   Settings,
   LayoutDashboard,
   ArrowRight,
+  Users,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,13 @@ const cmsModules = [
     countKey: 'testimonials' as const,
   },
   {
+    href: '/admin/cms/team',
+    title: 'Team Leaders',
+    description: 'Manage leadership photos, titles, and display order.',
+    iconName: 'users' as const,
+    countKey: 'teamMembers' as const,
+  },
+  {
     href: '/admin/cms/settings',
     title: 'Site Settings',
     description: 'Global brand settings, tagline, and platform stats.',
@@ -48,16 +56,18 @@ const iconMap = {
   fileText: FileText,
   newspaper: Newspaper,
   messageSquare: MessageSquareQuote,
+  users: Users,
   settings: Settings,
 };
 
 export default function CMSHub() {
-  const { pages, articles, testimonials } = useAdminStore();
+  const { pages, articles, testimonials, teamMembers } = useAdminStore();
 
   const counts = {
     pages: pages.length,
     articles: articles.length,
     testimonials: testimonials.length,
+    teamMembers: teamMembers.length,
   };
 
   const draftPages = pages.filter((p) => p.status === 'draft').length;
@@ -65,7 +75,7 @@ export default function CMSHub() {
 
   return (
     <div className="space-y-6">
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold text-factify-navy">{pages.length}</p>
@@ -88,6 +98,12 @@ export default function CMSHub() {
           <CardContent className="pt-6">
             <p className="text-2xl font-bold text-factify-navy">{testimonials.length}</p>
             <p className="text-sm text-factify-gray-dark">Testimonials</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-2xl font-bold text-factify-navy">{teamMembers.length}</p>
+            <p className="text-sm text-factify-gray-dark">Team Leaders</p>
           </CardContent>
         </Card>
       </div>
@@ -125,15 +141,13 @@ export default function CMSHub() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4 text-factify-gold" />
-            Database Integration
+            Content stored in your database
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-factify-gray-dark">
-            CMS changes are stored locally in your browser for now. When you connect a database,
-            replace the Zustand store actions in{' '}
-            <code className="text-xs bg-factify-gray/50 px-1.5 py-0.5 rounded">admin-store.ts</code>{' '}
-            with API calls to persist content server-side.
+            All CMS changes are saved to PostgreSQL and appear on the live site after you publish
+            each item. Use Team Leaders to manage photos and display order on About and Home.
           </p>
         </CardContent>
       </Card>

@@ -5,10 +5,12 @@ import FeaturesSection from '@/components/factify/features-section';
 import TestimonialCard from '@/components/factify/testimonial-card';
 import CTASection from '@/components/factify/cta-section';
 import TrendCard from '@/components/factify/trend-card';
+import TeamSection from '@/components/factify/team-section';
 import { prisma } from '@/lib/db';
 import { getTrendingMisinformation } from '@/lib/analytics/dashboard';
-import { mapDbSettingsToTpl, mapDbTestimonialToTpl } from '@/lib/cms/mappers';
-import { defaultSiteSettings } from '@/lib/cms/defaults';
+import { getPublishedTeamMembers } from '@/lib/cms/team';
+import { getSiteSettings } from '@/lib/cms/settings';
+import { mapDbTestimonialToTpl } from '@/lib/cms/mappers';
 import type { Testimonial } from '@/types';
 
 function testimonialToDisplay(t: { id: string; name: string; role: string; organization: string; content: string; rating: number }): Testimonial {
@@ -17,13 +19,12 @@ function testimonialToDisplay(t: { id: string; name: string; role: string; organ
 }
 
 export default async function HomePage() {
-  const [testimonials, trending, settingsRow] = await Promise.all([
+  const [testimonials, trending, settings, teamMembers] = await Promise.all([
     prisma.cmsTestimonial.findMany({ where: { status: 'published' }, take: 6 }),
     getTrendingMisinformation(),
-    prisma.siteSettings.findUnique({ where: { id: 'default' } }),
+    getSiteSettings(),
+    getPublishedTeamMembers(),
   ]);
-
-  const settings = settingsRow ? mapDbSettingsToTpl(settingsRow) : defaultSiteSettings;
   const displayTestimonials = testimonials.map((t) => testimonialToDisplay(mapDbTestimonialToTpl(t)));
 
   return (
@@ -71,6 +72,15 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+      )}
+
+      {settings.showTeamOnHome && teamMembers.length > 0 && (
+        <TeamSection
+          members={teamMembers}
+          headline={settings.teamHeadline}
+          subheadline={settings.teamSubheadline}
+          variant="compact"
+        />
       )}
 
       <CTASection

@@ -126,6 +126,16 @@ export interface CMSTestimonial {
   status: 'published' | 'draft';
 }
 
+export interface CMSTeamMember {
+  id: string;
+  name: string;
+  level: string;
+  bio?: string;
+  imageUrl?: string;
+  sortIndex: number;
+  status: 'published' | 'draft';
+}
+
 export interface CMSSiteSettings {
   siteName: string;
   tagline: string;
@@ -137,6 +147,9 @@ export interface CMSSiteSettings {
   statAccuracy: number;
   statSources: number;
   statMonitoring: string;
+  teamHeadline: string;
+  teamSubheadline: string;
+  showTeamOnHome: boolean;
 }
 
 export interface DashboardSummary {

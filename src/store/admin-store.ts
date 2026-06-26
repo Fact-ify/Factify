@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { CMSPage, CMSArticle, CMSTestimonial, CMSSiteSettings } from '@/types';
+import type { CMSPage, CMSArticle, CMSTestimonial, CMSTeamMember, CMSSiteSettings } from '@/types';
 
 interface AdminUser {
   email: string;
@@ -16,6 +16,7 @@ interface AdminStore {
   pages: CMSPage[];
   articles: CMSArticle[];
   testimonials: CMSTestimonial[];
+  teamMembers: CMSTeamMember[];
   siteSettings: CMSSiteSettings | null;
   checkSession: () => Promise<boolean>;
   checkSetupRequired: () => Promise<boolean>;
@@ -35,6 +36,9 @@ interface AdminStore {
   updateTestimonial: (id: string, data: Partial<CMSTestimonial>) => Promise<void>;
   deleteTestimonial: (id: string) => Promise<void>;
   addTestimonial: (testimonial: Omit<CMSTestimonial, 'id'>) => Promise<void>;
+  updateTeamMember: (id: string, data: Partial<CMSTeamMember>) => Promise<void>;
+  deleteTeamMember: (id: string) => Promise<void>;
+  addTeamMember: (member: Omit<CMSTeamMember, 'id'>) => Promise<void>;
   updateSiteSettings: (settings: Partial<CMSSiteSettings>) => Promise<void>;
 }
 
@@ -45,6 +49,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   pages: [],
   articles: [],
   testimonials: [],
+  teamMembers: [],
   siteSettings: null,
 
   checkSession: async () => {
@@ -113,6 +118,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       pages: [],
       articles: [],
       testimonials: [],
+      teamMembers: [],
       siteSettings: null,
     });
   },
@@ -125,6 +131,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       pages: data.pages ?? [],
       articles: data.articles ?? [],
       testimonials: data.testimonials ?? [],
+      teamMembers: data.teamMembers ?? [],
       siteSettings: data.siteSettings ?? null,
     });
   },
@@ -216,6 +223,39 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const created = await res.json();
       set({ testimonials: [...get().testimonials, created] });
+    }
+  },
+
+  updateTeamMember: async (id, data) => {
+    const member = get().teamMembers.find((m) => m.id === id);
+    if (!member) return;
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'team-member', id, data: { ...member, ...data } }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      set({ teamMembers: get().teamMembers.map((m) => (m.id === id ? updated : m)) });
+    }
+  },
+
+  deleteTeamMember: async (id) => {
+    const res = await fetch(`/api/cms?resource=team-member&id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      set({ teamMembers: get().teamMembers.filter((m) => m.id !== id) });
+    }
+  },
+
+  addTeamMember: async (member) => {
+    const res = await fetch('/api/cms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'team-member', data: member }),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      set({ teamMembers: [...get().teamMembers, created].sort((a, b) => a.sortIndex - b.sortIndex) });
     }
   },
 

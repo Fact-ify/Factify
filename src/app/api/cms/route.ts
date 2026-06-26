@@ -5,6 +5,7 @@ import {
   mapDbPageToTpl,
   mapDbArticleToTpl,
   mapDbTestimonialToTpl,
+  mapDbTeamMemberToTpl,
   mapDbSettingsToTpl,
 } from '@/lib/cms/mappers';
 import { defaultSiteSettings } from '@/lib/cms/defaults';
@@ -34,10 +35,11 @@ export async function GET(request: Request) {
       return NextResponse.json(settings ? mapDbSettingsToTpl(settings) : defaultSiteSettings);
     }
 
-    const [pages, articles, testimonials, settings] = await Promise.all([
+    const [pages, articles, testimonials, teamMembers, settings] = await Promise.all([
       prisma.cmsPage.findMany({ orderBy: { title: 'asc' } }),
       prisma.cmsArticle.findMany({ orderBy: { publishedAt: 'desc' } }),
       prisma.cmsTestimonial.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.cmsTeamMember.findMany({ orderBy: { sortIndex: 'asc' } }),
       prisma.siteSettings.findUnique({ where: { id: 'default' } }),
     ]);
 
@@ -45,6 +47,7 @@ export async function GET(request: Request) {
       pages: pages.map(mapDbPageToTpl),
       articles: articles.map(mapDbArticleToTpl),
       testimonials: testimonials.map(mapDbTestimonialToTpl),
+      teamMembers: teamMembers.map(mapDbTeamMemberToTpl),
       siteSettings: settings ? mapDbSettingsToTpl(settings) : defaultSiteSettings,
     });
   } catch (error) {
@@ -87,6 +90,20 @@ export async function POST(request: Request) {
         },
       });
       return NextResponse.json(mapDbTestimonialToTpl(testimonial));
+    }
+
+    if (resource === 'team-member') {
+      const member = await prisma.cmsTeamMember.create({
+        data: {
+          name: data.name,
+          level: data.level,
+          bio: data.bio ?? null,
+          imageUrl: data.imageUrl ?? null,
+          sortIndex: data.sortIndex ?? 0,
+          status: data.status ?? 'draft',
+        },
+      });
+      return NextResponse.json(mapDbTeamMemberToTpl(member));
     }
 
     return NextResponse.json({ error: 'Invalid resource' }, { status: 400 });
@@ -158,6 +175,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json(mapDbTestimonialToTpl(testimonial));
     }
 
+    if (resource === 'team-member') {
+      const member = await prisma.cmsTeamMember.update({
+        where: { id },
+        data: {
+          name: data.name,
+          level: data.level,
+          bio: data.bio ?? null,
+          imageUrl: data.imageUrl ?? null,
+          sortIndex: data.sortIndex,
+          status: data.status,
+        },
+      });
+      return NextResponse.json(mapDbTeamMemberToTpl(member));
+    }
+
     if (resource === 'settings') {
       const settings = await prisma.siteSettings.upsert({
         where: { id: 'default' },
@@ -191,6 +223,8 @@ export async function DELETE(request: Request) {
       await prisma.cmsArticle.delete({ where: { id } });
     } else if (resource === 'testimonial') {
       await prisma.cmsTestimonial.delete({ where: { id } });
+    } else if (resource === 'team-member') {
+      await prisma.cmsTeamMember.delete({ where: { id } });
     } else {
       return NextResponse.json({ error: 'Invalid resource' }, { status: 400 });
     }

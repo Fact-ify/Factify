@@ -1,5 +1,11 @@
-import type { CMSPage, CMSArticle, CMSTestimonial, CMSSiteSettings } from '@/types';
-import type { CmsPage as DbPage, CmsArticle as DbArticle, CmsTestimonial as DbTestimonial, SiteSettings as DbSettings } from '@/generated/prisma/client';
+import type { CMSPage, CMSArticle, CMSTestimonial, CMSTeamMember, CMSSiteSettings } from '@/types';
+import type {
+  CmsPage as DbPage,
+  CmsArticle as DbArticle,
+  CmsTestimonial as DbTestimonial,
+  CmsTeamMember as DbTeamMember,
+  SiteSettings as DbSettings,
+} from '@/generated/prisma/client';
 
 export function mapDbPageToTpl(page: DbPage): CMSPage {
   return {
@@ -47,6 +53,18 @@ export function mapDbTestimonialToTpl(testimonial: DbTestimonial): CMSTestimonia
   };
 }
 
+export function mapDbTeamMemberToTpl(member: DbTeamMember): CMSTeamMember {
+  return {
+    id: member.id,
+    name: member.name,
+    level: member.level,
+    bio: member.bio ?? undefined,
+    imageUrl: member.imageUrl ?? undefined,
+    sortIndex: member.sortIndex,
+    status: member.status as CMSTeamMember['status'],
+  };
+}
+
 export function mapDbSettingsToTpl(settings: DbSettings): CMSSiteSettings {
   return {
     siteName: settings.siteName,
@@ -59,5 +77,8 @@ export function mapDbSettingsToTpl(settings: DbSettings): CMSSiteSettings {
     statAccuracy: settings.statAccuracy,
     statSources: settings.statSources,
     statMonitoring: settings.statMonitoring,
+    teamHeadline: settings.teamHeadline,
+    teamSubheadline: settings.teamSubheadline,
+    showTeamOnHome: settings.showTeamOnHome,
   };
 }
