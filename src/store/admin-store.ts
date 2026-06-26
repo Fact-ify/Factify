@@ -18,7 +18,13 @@ interface AdminStore {
   testimonials: CMSTestimonial[];
   siteSettings: CMSSiteSettings | null;
   checkSession: () => Promise<boolean>;
+  checkSetupRequired: () => Promise<boolean>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  setupAdmin: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   loadCmsData: () => Promise<void>;
   updatePageField: (pageId: string, fieldId: string, value: string | number) => Promise<void>;
@@ -58,6 +64,17 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
+  checkSetupRequired: async () => {
+    try {
+      const res = await fetch('/api/admin/setup-status');
+      if (!res.ok) return false;
+      const data = await res.json();
+      return Boolean(data.setupRequired);
+    } catch {
+      return false;
+    }
+  },
+
   login: async (email, password) => {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
@@ -67,6 +84,21 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     const data = await res.json();
     if (!res.ok) {
       return { success: false, error: data.error ?? 'Login failed' };
+    }
+    set({ isAuthenticated: true, user: data.user, isLoading: false });
+    await get().loadCmsData();
+    return { success: true };
+  },
+
+  setupAdmin: async (name, email, password) => {
+    const res = await fetch('/api/admin/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error ?? 'Setup failed' };
     }
     set({ isAuthenticated: true, user: data.user, isLoading: false });
     await get().loadCmsData();

@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import bcrypt from 'bcryptjs';
 import { prisma } from '../src/lib/db';
 import {
   defaultSiteSettings,
@@ -9,23 +8,6 @@ import {
 } from '../src/lib/cms/defaults';
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@factify.com';
-  const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
-  const adminName = process.env.ADMIN_NAME ?? 'Admin User';
-
-  const passwordHash = await bcrypt.hash(adminPassword, 12);
-
-  await prisma.admin.upsert({
-    where: { email: adminEmail },
-    update: { password: passwordHash, name: adminName },
-    create: {
-      email: adminEmail,
-      password: passwordHash,
-      name: adminName,
-      role: 'admin',
-    },
-  });
-
   await prisma.siteSettings.upsert({
     where: { id: 'default' },
     update: defaultSiteSettings,
@@ -77,7 +59,7 @@ async function main() {
   }
 
   console.log('Seed complete.');
-  console.log(`Admin login: ${adminEmail}`);
+  console.log('Create your admin account at /admin/login if none exists yet.');
 }
 
 main()
