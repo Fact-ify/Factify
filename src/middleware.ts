@@ -5,7 +5,9 @@ import { verifySessionToken, SESSION_COOKIE } from '@/lib/auth/jwt';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+  const publicAdminPaths = ['/admin/login', '/admin/setup'];
+
+  if (pathname.startsWith('/admin') && !publicAdminPaths.some((path) => pathname.startsWith(path))) {
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     if (!token) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
@@ -16,7 +18,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname === '/admin/login') {
+  if (pathname === '/admin/login' || pathname === '/admin/setup') {
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     if (token) {
       const session = await verifySessionToken(token);
