@@ -1,4 +1,4 @@
-import type { CMSPage, CMSSiteSettings, CMSArticle, CMSTestimonial } from '@/types';
+import type { CMSPage, CMSSiteSettings, CMSArticle, CMSTestimonial, CMSTeamMember } from '@/types';
 
 export const defaultSiteSettings: CMSSiteSettings = {
   siteName: 'FACTIFY',
@@ -12,6 +12,10 @@ export const defaultSiteSettings: CMSSiteSettings = {
   statAccuracy: 95,
   statSources: 500,
   statMonitoring: '24/7',
+  teamHeadline: 'Leadership Team',
+  teamSubheadline:
+    'Experts in journalism, AI, and information integrity building the future of news verification.',
+  showTeamOnHome: true,
 };
 
 export const defaultCmsPages: Omit<CMSPage, 'id' | 'lastUpdated'>[] = [
@@ -108,6 +112,41 @@ export const defaultCmsTestimonials: Omit<CMSTestimonial, 'id'>[] = [
     organization: 'Institute for Digital Democracy',
     content: 'The detailed verification reports with supporting and contradicting sources are exactly what researchers need.',
     rating: 5,
+    status: 'published',
+  },
+];
+
+export const defaultCmsTeamMembers: Omit<CMSTeamMember, 'id'>[] = [
+  {
+    name: 'Dr. Amara Osei',
+    level: 'Chief Science Officer',
+    bio: 'Misinformation research',
+    imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face',
+    sortIndex: 1,
+    status: 'published',
+  },
+  {
+    name: 'James Chen',
+    level: 'Head of AI',
+    bio: 'Natural language verification',
+    imageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
+    sortIndex: 2,
+    status: 'published',
+  },
+  {
+    name: 'Sarah Mitchell',
+    level: 'Editorial Director',
+    bio: 'Source credibility standards',
+    imageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face',
+    sortIndex: 3,
+    status: 'published',
+  },
+  {
+    name: 'Kwame Asante',
+    level: 'Product Lead',
+    bio: 'User experience and trust design',
+    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+    sortIndex: 4,
     status: 'published',
   },
 ];

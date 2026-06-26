@@ -5,6 +5,7 @@ import {
   defaultCmsPages,
   defaultCmsArticles,
   defaultCmsTestimonials,
+  defaultCmsTeamMembers,
 } from '../src/lib/cms/defaults';
 
 async function main() {
@@ -55,6 +56,13 @@ async function main() {
   if (testimonialCount === 0) {
     for (const testimonial of defaultCmsTestimonials) {
       await prisma.cmsTestimonial.create({ data: testimonial });
+    }
+  }
+
+  const teamCount = await prisma.cmsTeamMember.count();
+  if (teamCount === 0) {
+    for (const member of defaultCmsTeamMembers) {
+      await prisma.cmsTeamMember.create({ data: member });
     }
   }
 

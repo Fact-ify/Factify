@@ -14,6 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { defaultSiteSettings } from '@/lib/cms/defaults';
 import AnimatedCounter from '@/components/factify/animated-counter';
+import TeamSection from '@/components/factify/team-section';
+import type { CMSTeamMember } from '@/types';
 
 const platformStats = [
   { value: defaultSiteSettings.statVerifications, suffix: '+', label: 'News Verifications' },
@@ -49,14 +51,13 @@ const values = [
   },
 ];
 
-const team = [
-  { name: 'Dr. Amara Osei', role: 'Chief Science Officer', focus: 'Misinformation research' },
-  { name: 'James Chen', role: 'Head of AI', focus: 'Natural language verification' },
-  { name: 'Sarah Mitchell', role: 'Editorial Director', focus: 'Source credibility standards' },
-  { name: 'Kwame Asante', role: 'Product Lead', focus: 'User experience & trust design' },
-];
+interface AboutPageProps {
+  teamMembers: CMSTeamMember[];
+  teamHeadline: string;
+  teamSubheadline: string;
+}
 
-export default function AboutPage() {
+export default function AboutPage({ teamMembers, teamHeadline, teamSubheadline }: AboutPageProps) {
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -191,37 +192,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-20 lg:py-28">
-        <div className="wrapper">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-factify-navy mb-4">Leadership Team</h2>
-            <p className="text-factify-gray-dark">
-              Experts in journalism, AI, and information integrity building the future of news
-              verification.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member, index) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-6 rounded-xl border border-factify-gray bg-white text-center card-hover"
-              >
-                <div className="h-16 w-16 rounded-full gradient-gold mx-auto mb-4 flex items-center justify-center text-xl font-bold text-factify-navy">
-                  {member.name.charAt(0)}
-                </div>
-                <h3 className="font-semibold text-factify-navy">{member.name}</h3>
-                <p className="text-sm text-factify-gold font-medium mt-1">{member.role}</p>
-                <p className="text-xs text-factify-gray-dark mt-2">{member.focus}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TeamSection
+        members={teamMembers}
+        headline={teamHeadline}
+        subheadline={teamSubheadline}
+      />
 
       {/* CTA */}
       <section className="py-20 gradient-navy">

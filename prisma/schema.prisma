@@ -75,6 +75,20 @@ model CmsTestimonial {
   @@map("cms_testimonials")
 }
 
+model CmsTeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  level     String
+  bio       String?  @db.Text
+  imageUrl  String?
+  sortIndex Int      @default(0)
+  status    String   @default("published")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cms_team_members")
+}
+
 model SiteSettings {
   id                String @id @default("default")
   siteName          String
@@ -87,4 +101,7 @@ model SiteSettings {
   statAccuracy      Int
   statSources       Int
   statMonitoring    String
+  teamHeadline      String @default("Leadership Team")
+  teamSubheadline   String @default("Experts in journalism, AI, and information integrity building the future of news verification.") @db.Text
+  showTeamOnHome    Boolean @default(true)
 }

@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/store/admin-store';
 
 export default function AdminOverviewPage() {
-  const { pages, articles, testimonials, user } = useAdminStore();
+  const { pages, articles, testimonials, teamMembers, user } = useAdminStore();
   const [stats, setStats] = useState({ totalSearches: 0, verifiedStories: 0, fakeNewsDetected: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -46,6 +46,7 @@ export default function AdminOverviewPage() {
     { href: '/admin/cms/pages', label: 'Edit Pages', count: pages.length },
     { href: '/admin/cms/articles', label: 'Manage Articles', count: articles.length },
     { href: '/admin/cms/testimonials', label: 'Testimonials', count: testimonials.length },
+    { href: '/admin/cms/team', label: 'Team Leaders', count: teamMembers.length },
     { href: '/admin/dashboard', label: 'Full Analytics', count: null },
   ];
 

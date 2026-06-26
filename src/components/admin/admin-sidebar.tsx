@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   Layers,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminStore } from '@/store/admin-store';
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/admin/cms/pages', label: 'Pages', iconName: 'fileText' as const },
   { href: '/admin/cms/articles', label: 'Articles', iconName: 'newspaper' as const },
   { href: '/admin/cms/testimonials', label: 'Testimonials', iconName: 'messageSquare' as const },
+  { href: '/admin/cms/team', label: 'Team Leaders', iconName: 'users' as const },
   { href: '/admin/cms/settings', label: 'Settings', iconName: 'settings' as const },
 ];
 
@@ -33,6 +35,7 @@ const iconMap = {
   fileText: FileText,
   newspaper: Newspaper,
   messageSquare: MessageSquareQuote,
+  users: Users,
   settings: Settings,
 };
 
