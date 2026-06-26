@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "cursor/**"
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  DATABASE_URL: postgresql://factify:factify@localhost:5432/factify
+  AUTH_SECRET: ci-test-secret-at-least-32-characters-long
+  ADMIN_EMAIL: admin@factify.com
+  ADMIN_PASSWORD: ci-admin-password
+  ADMIN_NAME: CI Admin
+
+jobs:
+  quality:
+    name: Lint and build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: factify
+          POSTGRES_PASSWORD: factify
+          POSTGRES_DB: factify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U factify -d factify"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Sync database schema
+        run: npm run db:push
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
