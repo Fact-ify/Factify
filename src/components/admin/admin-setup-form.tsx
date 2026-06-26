@@ -1,62 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAdminStore } from '@/store/admin-store';
 
-interface LoginForm {
+interface SetupForm {
+  name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
-export default function AdminLoginForm() {
+export default function AdminSetupForm() {
   const router = useRouter();
-  const login = useAdminStore((s) => s.login);
-  const checkSession = useAdminStore((s) => s.checkSession);
-  const isAuthenticated = useAdminStore((s) => s.isAuthenticated);
-  const isLoading = useAdminStore((s) => s.isLoading);
+  const setupAdmin = useAdminStore((s) => s.setupAdmin);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
-    defaultValues: { email: '', password: '' },
+  const { register, handleSubmit, formState: { errors } } = useForm<SetupForm>({
+    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
 
-  useEffect(() => {
-    checkSession();
-  }, [checkSession]);
+  const onSetup = async (data: SetupForm) => {
+    if (data.password !== data.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
-  useEffect(() => {
-    if (isAuthenticated) router.replace('/admin');
-  }, [isAuthenticated, router]);
-
-  const onLogin = async (data: LoginForm) => {
     setSubmitting(true);
     setError('');
-    const result = await login(data.email, data.password);
+    const result = await setupAdmin(data.name, data.email, data.password);
     setSubmitting(false);
+
     if (result.success) {
       router.push('/admin');
+      router.refresh();
     } else {
-      setError(result.error ?? 'Login failed');
+      setError(result.error ?? 'Setup failed');
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-factify-gold" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex">
@@ -71,9 +61,9 @@ export default function AdminLoginForm() {
               <p className="text-sm text-white/60">Admin Console</p>
             </div>
           </div>
-          <h1 className="text-3xl font-bold mb-4">Manage Your Platform</h1>
-          <p className="text-white/70 leading-relaxed mb-8">
-            Access analytics, manage page content, edit articles and testimonials, and configure site settings.
+          <h1 className="text-3xl font-bold mb-4">Set Up Your Admin Account</h1>
+          <p className="text-white/70 leading-relaxed">
+            Create the one admin account for this site. After that, only sign in will be available.
           </p>
         </motion.div>
       </div>
@@ -82,17 +72,28 @@ export default function AdminLoginForm() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
           <div className="rounded-xl border border-factify-gray bg-white p-8 shadow-factify-md">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-factify-navy">Sign in to Admin</h2>
+              <h2 className="text-xl font-bold text-factify-navy">Create admin account</h2>
               <p className="text-sm text-factify-gray-dark mt-1">
-                Use the admin account you created at setup.
+                This can only be done once. Choose your credentials carefully.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onLogin)} className="space-y-5">
+            <form onSubmit={handleSubmit(onSetup)} className="space-y-5">
               <div>
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="name">Full name</Label>
                 <Input
-                  id="email"
+                  id="name"
+                  placeholder="Admin User"
+                  disabled={submitting}
+                  {...register('name', { required: 'Name is required' })}
+                />
+                {errors.name && <p className="text-sm text-factify-error mt-1">{errors.name.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="setup-email">Email address</Label>
+                <Input
+                  id="setup-email"
                   type="email"
                   placeholder="you@example.com"
                   disabled={submitting}
@@ -102,14 +103,17 @@ export default function AdminLoginForm() {
               </div>
 
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="setup-password">Password</Label>
                 <div className="relative">
                   <Input
-                    id="password"
+                    id="setup-password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder="At least 8 characters"
                     disabled={submitting}
-                    {...register('password', { required: 'Password is required' })}
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                    })}
                   />
                   <button
                     type="button"
@@ -123,6 +127,20 @@ export default function AdminLoginForm() {
                 {errors.password && <p className="text-sm text-factify-error mt-1">{errors.password.message}</p>}
               </div>
 
+              <div>
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Repeat your password"
+                  disabled={submitting}
+                  {...register('confirmPassword', { required: 'Please confirm your password' })}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-factify-error mt-1">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
               {error && (
                 <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
               )}
@@ -131,26 +149,16 @@ export default function AdminLoginForm() {
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
+                    Creating account...
                   </>
                 ) : (
                   <>
-                    <Lock className="h-4 w-4" />
-                    Sign In
+                    <UserPlus className="h-4 w-4" />
+                    Create Admin Account
                   </>
                 )}
               </Button>
             </form>
-
-            <p className="mt-4 text-xs text-factify-gray-dark leading-relaxed">
-              If you never created an admin account but still see this page, an older database seed may
-              have created one already. Try signing in with your previous credentials, or clear the
-              Admin table in your database and visit{' '}
-              <Link href="/admin/setup" className="text-factify-gold hover:underline">
-                /admin/setup
-              </Link>
-              .
-            </p>
           </div>
 
           <p className="text-center text-sm text-factify-gray-dark mt-6">
