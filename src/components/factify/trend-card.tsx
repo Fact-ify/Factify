@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { TrendingFakeNews } from '@/data/mock/types';
+import type { TrendingFakeNews } from '@/types';
 
 interface TrendCardProps {
   trend: TrendingFakeNews;
@@ -46,7 +46,7 @@ export default function TrendCard({ trend, index = 0 }: TrendCardProps) {
             href={`/report/${trend.reportId}`}
             className="text-factify-gold font-medium hover:underline"
           >
-            View Report →
+            View Report
           </Link>
         </div>
       </div>

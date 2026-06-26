@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { VerificationReport } from '@/data/mock/types';
+import type { VerificationReport } from '@/types';
 
 interface VerificationStore {
   currentReport: VerificationReport | null;

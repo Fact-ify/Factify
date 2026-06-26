@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationReport {
+  id                String   @id @default(cuid())
+  claim             String   @db.Text
+  summary           String   @db.Text
+  verdict           String
+  confidence        Int
+  riskLevel         String
+  sourceCredibility Int
+  evidenceStrength  Int
+  aiExplanation     String   @db.Text
+  recommendations   Json
+  sources           Json
+  category          String   @default("General")
+  mode              String   @default("headline")
+  createdAt         DateTime @default(now())
+}
+
+model CmsPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  route       String
+  description String
+  status      String   @default("published")
+  fields      Json
+  updatedAt   DateTime @updatedAt
+
+  @@map("cms_pages")
+}
+
+model CmsArticle {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String   @db.Text
+  sourceId    String
+  url         String?
+  category    String
+  region      String   @default("Global")
+  status      String   @default("published")
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@map("cms_articles")
+}
+
+model CmsTestimonial {
+  id           String   @id @default(cuid())
+  name         String
+  role         String
+  organization String
+  content      String   @db.Text
+  rating       Int      @default(5)
+  status       String   @default("published")
+  createdAt    DateTime @default(now())
+
+  @@map("cms_testimonials")
+}
+
+model SiteSettings {
+  id                String @id @default("default")
+  siteName          String
+  tagline           String
+  heroHeadline      String
+  heroSubheadline   String @db.Text
+  ctaHeadline       String
+  ctaButtonText     String
+  statVerifications Int
+  statAccuracy      Int
+  statSources       Int
+  statMonitoring    String
+}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -9,19 +10,62 @@ import {
   BarChart3,
   PieChart,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import DashboardCard from '@/components/factify/dashboard-card';
 import TrendCard from '@/components/factify/trend-card';
 import ConfidenceMeter from '@/components/factify/confidence-meter';
-import { dashboardSummary } from '@/data/mock/dashboard';
-import { trendingFakeNews } from '@/data/mock/trending';
-import { verificationReports } from '@/data/mock/reports';
+import type { DashboardSummary, TrendingFakeNews, VerificationReport } from '@/types';
 
 export default function DashboardPage() {
-  const { weeklyActivity, credibilityDistribution, popularCategories, sourceReliabilityTrends } =
-    dashboardSummary;
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [recentReports, setRecentReports] = useState<VerificationReport[]>([]);
+  const [trending, setTrending] = useState<TrendingFakeNews[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const maxActivity = Math.max(...weeklyActivity);
+  useEffect(() => {
+    async function load() {
+      try {
+        const [analyticsRes, trendingRes] = await Promise.all([
+          fetch('/api/analytics'),
+          fetch('/api/analytics?type=trending'),
+        ]);
+        if (analyticsRes.ok) {
+          const data = await analyticsRes.json();
+          setSummary(data);
+          setRecentReports(data.recentReports ?? []);
+        }
+        if (trendingRes.ok) {
+          setTrending(await trendingRes.json());
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="py-24 flex justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-factify-gold" />
+      </div>
+    );
+  }
+
+  const dashboardSummary = summary ?? {
+    totalSearches: 0,
+    verifiedStories: 0,
+    fakeNewsDetected: 0,
+    savedReports: 0,
+    weeklyActivity: [0, 0, 0, 0, 0, 0, 0],
+    credibilityDistribution: { high: 0, medium: 0, low: 0 },
+    popularCategories: [],
+    sourceReliabilityTrends: [],
+  };
+
+  const { weeklyActivity, credibilityDistribution, popularCategories } = dashboardSummary;
+  const maxActivity = Math.max(...weeklyActivity, 1);
 
   return (
     <div className="py-12 lg:py-16 bg-factify-gray/20 min-h-screen">
@@ -31,45 +75,17 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-10"
         >
-          <h1 className="text-3xl lg:text-4xl font-bold text-factify-navy mb-2">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-factify-navy mb-2">Dashboard</h1>
           <p className="text-factify-gray-dark">
-            Your verification analytics and activity overview.
+            Live verification analytics from your Factify platform.
           </p>
         </motion.div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <DashboardCard
-            title="Total Searches"
-            value={dashboardSummary.totalSearches}
-            icon={Search}
-            change="+12% this week"
-            changeType="positive"
-            index={0}
-          />
-          <DashboardCard
-            title="Verified Stories"
-            value={dashboardSummary.verifiedStories}
-            icon={ShieldCheck}
-            change="+8% this week"
-            changeType="positive"
-            index={1}
-          />
-          <DashboardCard
-            title="Fake News Detected"
-            value={dashboardSummary.fakeNewsDetected}
-            icon={AlertTriangle}
-            change="+3 today"
-            changeType="negative"
-            index={2}
-          />
-          <DashboardCard
-            title="Saved Reports"
-            value={dashboardSummary.savedReports}
-            icon={Bookmark}
-            change="+15 this month"
-            changeType="positive"
-            index={3}
-          />
+          <DashboardCard title="Total Searches" value={dashboardSummary.totalSearches} icon={Search} index={0} />
+          <DashboardCard title="Verified Stories" value={dashboardSummary.verifiedStories} icon={ShieldCheck} index={1} />
+          <DashboardCard title="Needs Review" value={dashboardSummary.fakeNewsDetected} icon={AlertTriangle} index={2} />
+          <DashboardCard title="Saved Reports" value={dashboardSummary.savedReports} icon={Bookmark} index={3} />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-10">
@@ -109,39 +125,27 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-factify-navy">Credibility Distribution</h2>
             </div>
             <div className="space-y-4">
-              <ConfidenceMeter
-                value={credibilityDistribution.high}
-                label="High Credibility Sources"
-                size="lg"
-              />
-              <ConfidenceMeter
-                value={credibilityDistribution.medium}
-                label="Medium Credibility Sources"
-                size="lg"
-              />
-              <ConfidenceMeter
-                value={credibilityDistribution.low}
-                label="Low Credibility Sources"
-                size="lg"
-              />
+              <ConfidenceMeter value={credibilityDistribution.high} label="High Credibility Sources" size="lg" />
+              <ConfidenceMeter value={credibilityDistribution.medium} label="Medium Credibility Sources" size="lg" />
+              <ConfidenceMeter value={credibilityDistribution.low} label="Low Credibility Sources" size="lg" />
             </div>
           </motion.div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-10">
+        {popularCategories.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="p-6 rounded-xl border border-factify-gray bg-white"
+            className="p-6 rounded-xl border border-factify-gray bg-white mb-10"
           >
             <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="h-5 w-5 text-factify-gold" />
+              <TrendingUp className="h-5 w-5 text-factify-gold" />
               <h2 className="text-lg font-semibold text-factify-navy">Popular Categories</h2>
             </div>
             <div className="space-y-3">
               {popularCategories.map((cat) => {
-                const maxCount = popularCategories[0].count;
+                const maxCount = popularCategories[0]?.count || 1;
                 return (
                   <div key={cat.name}>
                     <div className="flex justify-between text-sm mb-1">
@@ -151,10 +155,7 @@ export default function DashboardPage() {
                     <div className="h-2 rounded-full bg-factify-gray overflow-hidden">
                       <div
                         className="h-full rounded-full"
-                        style={{
-                          width: `${(cat.count / maxCount) * 100}%`,
-                          backgroundColor: cat.color,
-                        }}
+                        style={{ width: `${(cat.count / maxCount) * 100}%`, backgroundColor: cat.color }}
                       />
                     </div>
                   </div>
@@ -162,87 +163,41 @@ export default function DashboardPage() {
               })}
             </div>
           </motion.div>
+        )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="p-6 rounded-xl border border-factify-gray bg-white"
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="h-5 w-5 text-factify-gold" />
-              <h2 className="text-lg font-semibold text-factify-navy">Source Reliability Trends</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-factify-gray">
-                    <th className="text-left py-2 font-medium text-factify-gray-dark">Month</th>
-                    <th className="text-right py-2 font-medium text-factify-navy">Reuters</th>
-                    <th className="text-right py-2 font-medium text-factify-navy">BBC</th>
-                    <th className="text-right py-2 font-medium text-factify-navy">AP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sourceReliabilityTrends.map((row) => (
-                    <tr key={row.month} className="border-b border-factify-gray/50">
-                      <td className="py-2.5 text-factify-gray-dark">{row.month}</td>
-                      <td className="py-2.5 text-right font-medium text-factify-gold">{row.reuters}%</td>
-                      <td className="py-2.5 text-right font-medium text-factify-navy">{row.bbc}%</td>
-                      <td className="py-2.5 text-right font-medium text-factify-navy">{row.ap}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {recentReports.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-10">
+            <h2 className="text-lg font-semibold text-factify-navy mb-4">Recent Verifications</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {recentReports.slice(0, 4).map((report) => (
+                <div key={report.id} className="p-4 rounded-xl border border-factify-gray bg-white flex items-center justify-between">
+                  <div className="min-w-0 flex-1 mr-4">
+                    <p className="text-sm font-medium text-factify-navy truncate">{report.claim}</p>
+                    <p className="text-xs text-factify-gray-dark mt-1">{report.createdAt}</p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+                    report.verdict.includes('False') ? 'bg-red-50 text-red-700'
+                      : report.verdict.includes('True') ? 'bg-green-50 text-green-700'
+                        : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {report.verdict}
+                  </span>
+                </div>
+              ))}
             </div>
           </motion.div>
-        </div>
+        )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mb-10"
-        >
-          <h2 className="text-lg font-semibold text-factify-navy mb-4">Recent Verifications</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {verificationReports.slice(0, 4).map((report) => (
-              <div
-                key={report.id}
-                className="p-4 rounded-xl border border-factify-gray bg-white flex items-center justify-between"
-              >
-                <div className="min-w-0 flex-1 mr-4">
-                  <p className="text-sm font-medium text-factify-navy truncate">{report.claim}</p>
-                  <p className="text-xs text-factify-gray-dark mt-1">{report.createdAt}</p>
-                </div>
-                <span
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
-                    report.verdict.includes('False')
-                      ? 'bg-red-50 text-red-700'
-                      : report.verdict.includes('True')
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-amber-50 text-amber-700'
-                  }`}
-                >
-                  {report.verdict}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-        >
-          <h2 className="text-lg font-semibold text-factify-navy mb-4">Trending Misinformation</h2>
-          <div className="space-y-3">
-            {trendingFakeNews.slice(0, 5).map((trend, index) => (
-              <TrendCard key={trend.id} trend={trend} index={index} />
-            ))}
-          </div>
-        </motion.div>
+        {trending.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+            <h2 className="text-lg font-semibold text-factify-navy mb-4">Trending Misinformation</h2>
+            <div className="space-y-3">
+              {trending.slice(0, 5).map((trend, index) => (
+                <TrendCard key={trend.id} trend={trend} index={index} />
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

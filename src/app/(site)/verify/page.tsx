@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import VerificationForm from '@/components/factify/verification-form';
 import VerificationResult from '@/components/factify/verification-result';
-import { defaultVerificationResult, verificationReports } from '@/data/mock/reports';
 import { useVerificationStore } from '@/store/verification-store';
 
 function VerifyPageContent() {
@@ -15,23 +14,28 @@ function VerifyPageContent() {
   const { currentReport, isAnalyzing, setCurrentReport, setIsAnalyzing } = useVerificationStore();
 
   const handleVerify = useCallback(
-    async ({ content }: { mode: string; content: string }) => {
+    async ({ mode, content }: { mode: string; content: string }) => {
       setIsAnalyzing(true);
       setCurrentReport(null);
 
-      await new Promise((resolve) => setTimeout(resolve, 1800));
+      try {
+        const res = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, mode }),
+        });
 
-      const matchedReport =
-        verificationReports.find((r) =>
-          r.claim.toLowerCase().includes(content.toLowerCase().slice(0, 20))
-        ) ?? {
-          ...defaultVerificationResult,
-          claim: content,
-          summary: `Analysis of: "${content.slice(0, 100)}${content.length > 100 ? '...' : ''}"`,
-        };
+        if (!res.ok) {
+          throw new Error('Verification failed');
+        }
 
-      setCurrentReport(matchedReport);
-      setIsAnalyzing(false);
+        const report = await res.json();
+        setCurrentReport(report);
+      } catch {
+        setCurrentReport(null);
+      } finally {
+        setIsAnalyzing(false);
+      }
     },
     [setCurrentReport, setIsAnalyzing]
   );
@@ -43,7 +47,7 @@ function VerifyPageContent() {
   }, [initialQuery, currentReport, handleVerify]);
 
   return (
-    <div className="py-12 lg:py-16 bg-factify-gray/20 min-h-screen">
+    <div className="py-8 sm:py-12 lg:py-16 bg-factify-gray/20 min-h-screen">
       <div className="wrapper">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -54,7 +58,7 @@ function VerifyPageContent() {
             <ShieldCheck className="h-3.5 w-3.5" />
             News Verification
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-factify-navy mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-factify-navy mb-3">
             Verify News & Claims
           </h1>
           <p className="text-factify-gray-dark">
@@ -62,7 +66,7 @@ function VerifyPageContent() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
           <VerificationForm
             key={initialQuery}
             onSubmit={handleVerify}
@@ -75,14 +79,14 @@ function VerifyPageContent() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="rounded-xl border border-factify-gray bg-white p-12 text-center shadow-factify-sm"
+                className="rounded-xl border border-factify-gray bg-white p-8 sm:p-12 text-center shadow-factify-sm"
               >
                 <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-factify-gold/10 mb-4">
                   <div className="h-8 w-8 rounded-full border-2 border-factify-gold border-t-transparent animate-spin" />
                 </div>
                 <h3 className="text-lg font-semibold text-factify-navy mb-2">Analyzing...</h3>
                 <p className="text-sm text-factify-gray-dark">
-                  Cross-referencing trusted sources and fact-check databases
+                  Cross-referencing NewsAPI, GNews, Bing, and Tavily sources
                 </p>
               </motion.div>
             )}
@@ -92,11 +96,11 @@ function VerifyPageContent() {
             )}
 
             {!isAnalyzing && !currentReport && (
-              <div className="rounded-xl border border-dashed border-factify-gray bg-white/50 p-12 text-center">
+              <div className="rounded-xl border border-dashed border-factify-gray bg-white/50 p-8 sm:p-12 text-center">
                 <ShieldCheck className="h-12 w-12 text-factify-gray mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-factify-navy mb-2">Ready to Verify</h3>
                 <p className="text-sm text-factify-gray-dark">
-                  Submit news content on the left to receive a detailed verification report with sources.
+                  Submit news content in the form to receive a detailed verification report with sources.
                 </p>
               </div>
             )}

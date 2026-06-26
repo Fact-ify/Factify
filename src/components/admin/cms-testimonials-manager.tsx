@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStore } from '@/store/admin-store';
-import type { CMSTestimonial } from '@/data/mock/cms-content';
+import type { CMSTestimonial } from '@/types';
 
 const emptyTestimonial: Omit<CMSTestimonial, 'id'> = {
   name: '',

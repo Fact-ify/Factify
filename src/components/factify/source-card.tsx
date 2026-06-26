@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { ExternalLink, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getSourceById } from '@/data/mock/sources';
-import type { VerificationSource } from '@/data/mock/types';
+import { getSourceById } from '@/lib/sources';
+import type { VerificationSource } from '@/types';
 import CredibilityBadge from './credibility-badge';
 
 interface SourceCardProps {

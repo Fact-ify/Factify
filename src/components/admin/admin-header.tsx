@@ -46,7 +46,7 @@ export default function AdminHeader({ title, description }: AdminHeaderProps) {
             <Bell className="h-5 w-5 text-factify-navy" />
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-factify-gold" />
           </button>
-          <Badge variant="navy" className="hidden sm:inline-flex">Mock Mode</Badge>
+          <Badge variant="success" className="hidden sm:inline-flex">Live</Badge>
         </div>
       </header>
 

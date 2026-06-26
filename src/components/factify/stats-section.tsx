@@ -1,10 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { platformStats } from '@/data/mock/testimonials';
 import AnimatedCounter from './animated-counter';
+import type { CMSSiteSettings } from '@/types';
 
-export default function StatsSection() {
+interface StatsSectionProps {
+  settings?: CMSSiteSettings;
+}
+
+export default function StatsSection({ settings }: StatsSectionProps) {
+  const platformStats = [
+    { value: settings?.statVerifications ?? 100000, suffix: '+', label: 'News Verifications' },
+    { value: settings?.statAccuracy ?? 95, suffix: '%', label: 'Verification Accuracy' },
+    { value: settings?.statSources ?? 500, suffix: '+', label: 'Trusted News Sources' },
+    { value: 24, suffix: '/7', label: 'AI Monitoring' },
+  ];
+
   return (
     <section className="py-16 bg-factify-navy">
       <div className="wrapper">
