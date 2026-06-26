@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, HelpCircle, FileText, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { VerificationReport } from '@/data/mock/types';
+import type { VerificationReport } from '@/types';
 import ConfidenceMeter from './confidence-meter';
 import SourceCard from './source-card';
 

@@ -12,8 +12,15 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { platformStats } from '@/data/mock/testimonials';
+import { defaultSiteSettings } from '@/lib/cms/defaults';
 import AnimatedCounter from '@/components/factify/animated-counter';
+
+const platformStats = [
+  { value: defaultSiteSettings.statVerifications, suffix: '+', label: 'News Verifications' },
+  { value: defaultSiteSettings.statAccuracy, suffix: '%', label: 'Verification Accuracy' },
+  { value: defaultSiteSettings.statSources, suffix: '+', label: 'Trusted News Sources' },
+  { value: 24, suffix: '/7', label: 'AI Monitoring' },
+];
 
 const values = [
   {
@@ -113,7 +120,7 @@ export default function AboutPage() {
                 <p>
                   In an era where misinformation spreads faster than truth, everyone needs tools to
                   verify what they read before sharing it. Factify was built to democratize
-                  professional-grade fact-checking — making it accessible to journalists,
+                  professional-grade fact-checking and make it accessible to journalists,
                   researchers, educators, and everyday citizens.
                 </p>
                 <p>
@@ -148,7 +155,7 @@ export default function AboutPage() {
                 &ldquo;We believe that access to verified information is a fundamental right in the
                 digital age. Factify exists to protect that right.&rdquo;
               </blockquote>
-              <p className="mt-4 text-sm text-factify-gray-dark">— The Factify Team</p>
+              <p className="mt-4 text-sm text-factify-gray-dark">The Factify Team</p>
             </motion.div>
           </div>
         </div>

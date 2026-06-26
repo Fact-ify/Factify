@@ -1,5 +1,13 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 
-export const AI_MODEL = openai('gpt-4o-mini', {
+export function isAiAvailable(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
+}
+
+const openaiProvider = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export const AI_MODEL = openaiProvider('gpt-4o-mini', {
   structuredOutputs: true,
 });

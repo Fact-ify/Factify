@@ -9,7 +9,7 @@ import ReportSection from '@/components/factify/report-section';
 import SourceCard from '@/components/factify/source-card';
 import ConfidenceMeter from '@/components/factify/confidence-meter';
 import ReportActions from '@/components/factify/report-actions';
-import { getReportById } from '@/data/mock/reports';
+import { getReportById } from '@/lib/verification/service';
 
 interface ReportPageProps {
   params: Promise<{ id: string }>;
@@ -27,14 +27,9 @@ function getVerdictColor(verdict: string) {
   return 'text-amber-700 bg-amber-50 border-amber-200';
 }
 
-export async function generateStaticParams() {
-  const { verificationReports } = await import('@/data/mock/reports');
-  return verificationReports.map((report) => ({ id: report.id }));
-}
-
 export default async function ReportPage({ params }: ReportPageProps) {
   const { id } = await params;
-  const report = getReportById(id);
+  const report = await getReportById(id);
 
   if (!report) {
     notFound();
@@ -52,7 +47,11 @@ export default async function ReportPage({ params }: ReportPageProps) {
         <div className="mb-8 p-6 rounded-xl gradient-navy text-white">
           <p className="text-xs text-white/60 mb-1">Verification Report</p>
           <h1 className="text-2xl lg:text-3xl font-bold mb-2">Factify Analysis Report</h1>
-          <p className="text-sm text-white/70">Report ID: {report.id} · Generated: {report.createdAt}</p>
+          <p className="text-sm text-white/70">
+            Report ID: {report.id}
+            <span className="hidden sm:inline"> · </span>
+            <span className="block sm:inline">Generated {report.createdAt}</span>
+          </p>
         </div>
 
         <div className="space-y-6">

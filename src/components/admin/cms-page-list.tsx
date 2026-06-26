@@ -5,7 +5,7 @@ import { ExternalLink, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CMSPage } from '@/data/mock/cms-content';
+import type { CMSPage } from '@/types';
 
 interface CMSPageListProps {
   pages: CMSPage[];

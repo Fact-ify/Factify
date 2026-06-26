@@ -1,19 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import {
-  cmsPages,
-  cmsArticles,
-  cmsTestimonials,
-  defaultSiteSettings,
-  DEMO_ADMIN,
-  type CMSPage,
-  type CMSArticle,
-  type CMSTestimonial,
-  type CMSSiteSettings,
-  type CMSField,
-} from '@/data/mock/cms-content';
+import type { CMSPage, CMSArticle, CMSTestimonial, CMSSiteSettings } from '@/types';
 
 interface AdminUser {
   email: string;
@@ -23,124 +11,191 @@ interface AdminUser {
 
 interface AdminStore {
   isAuthenticated: boolean;
+  isLoading: boolean;
   user: AdminUser | null;
   pages: CMSPage[];
   articles: CMSArticle[];
   testimonials: CMSTestimonial[];
-  siteSettings: CMSSiteSettings;
+  siteSettings: CMSSiteSettings | null;
+  checkSession: () => Promise<boolean>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  updatePageField: (pageId: string, fieldId: string, value: string | number) => void;
-  updatePageStatus: (pageId: string, status: 'published' | 'draft') => void;
-  updateArticle: (id: string, data: Partial<CMSArticle>) => void;
-  deleteArticle: (id: string) => void;
-  addArticle: (article: Omit<CMSArticle, 'id'>) => void;
-  updateTestimonial: (id: string, data: Partial<CMSTestimonial>) => void;
-  deleteTestimonial: (id: string) => void;
-  addTestimonial: (testimonial: Omit<CMSTestimonial, 'id'>) => void;
-  updateSiteSettings: (settings: Partial<CMSSiteSettings>) => void;
-  resetCMS: () => void;
+  logout: () => Promise<void>;
+  loadCmsData: () => Promise<void>;
+  updatePageField: (pageId: string, fieldId: string, value: string | number) => Promise<void>;
+  updatePageStatus: (pageId: string, status: 'published' | 'draft') => Promise<void>;
+  updateArticle: (id: string, data: Partial<CMSArticle>) => Promise<void>;
+  deleteArticle: (id: string) => Promise<void>;
+  addArticle: (article: Omit<CMSArticle, 'id'>) => Promise<void>;
+  updateTestimonial: (id: string, data: Partial<CMSTestimonial>) => Promise<void>;
+  deleteTestimonial: (id: string) => Promise<void>;
+  addTestimonial: (testimonial: Omit<CMSTestimonial, 'id'>) => Promise<void>;
+  updateSiteSettings: (settings: Partial<CMSSiteSettings>) => Promise<void>;
 }
 
-function touchPageFields(fields: CMSField[], fieldId: string, value: string | number): CMSField[] {
-  return fields.map((f) => (f.id === fieldId ? { ...f, value } : f));
-}
+export const useAdminStore = create<AdminStore>((set, get) => ({
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+  pages: [],
+  articles: [],
+  testimonials: [],
+  siteSettings: null,
 
-export const useAdminStore = create<AdminStore>()(
-  persist(
-    (set, get) => ({
+  checkSession: async () => {
+    try {
+      const res = await fetch('/api/admin/me');
+      if (res.ok) {
+        const data = await res.json();
+        set({ isAuthenticated: true, user: data.user, isLoading: false });
+        await get().loadCmsData();
+        return true;
+      }
+      set({ isAuthenticated: false, user: null, isLoading: false });
+      return false;
+    } catch {
+      set({ isAuthenticated: false, user: null, isLoading: false });
+      return false;
+    }
+  },
+
+  login: async (email, password) => {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error ?? 'Login failed' };
+    }
+    set({ isAuthenticated: true, user: data.user, isLoading: false });
+    await get().loadCmsData();
+    return { success: true };
+  },
+
+  logout: async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    set({
       isAuthenticated: false,
       user: null,
-      pages: cmsPages,
-      articles: cmsArticles,
-      testimonials: cmsTestimonials,
-      siteSettings: defaultSiteSettings,
+      pages: [],
+      articles: [],
+      testimonials: [],
+      siteSettings: null,
+    });
+  },
 
-      login: async (email, password) => {
-        await new Promise((r) => setTimeout(r, 800));
-        if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
-          set({
-            isAuthenticated: true,
-            user: {
-              email: DEMO_ADMIN.email,
-              name: DEMO_ADMIN.name,
-              role: DEMO_ADMIN.role,
-            },
-          });
-          return { success: true };
-        }
-        return { success: false, error: 'Invalid email or password' };
-      },
+  loadCmsData: async () => {
+    const res = await fetch('/api/cms');
+    if (!res.ok) return;
+    const data = await res.json();
+    set({
+      pages: data.pages ?? [],
+      articles: data.articles ?? [],
+      testimonials: data.testimonials ?? [],
+      siteSettings: data.siteSettings ?? null,
+    });
+  },
 
-      logout: () => set({ isAuthenticated: false, user: null }),
+  updatePageField: async (pageId, fieldId, value) => {
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'page-field', id: pageId, data: { fieldId, value } }),
+    });
+    if (res.ok) {
+      const page = await res.json();
+      set({ pages: get().pages.map((p) => (p.id === pageId ? page : p)) });
+    }
+  },
 
-      updatePageField: (pageId, fieldId, value) =>
-        set({
-          pages: get().pages.map((p) =>
-            p.id === pageId
-              ? {
-                  ...p,
-                  fields: touchPageFields(p.fields, fieldId, value),
-                  lastUpdated: new Date().toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }),
-                }
-              : p
-          ),
-        }),
+  updatePageStatus: async (pageId, status) => {
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'page', id: pageId, data: { status } }),
+    });
+    if (res.ok) {
+      const page = await res.json();
+      set({ pages: get().pages.map((p) => (p.id === pageId ? page : p)) });
+    }
+  },
 
-      updatePageStatus: (pageId, status) =>
-        set({
-          pages: get().pages.map((p) => (p.id === pageId ? { ...p, status } : p)),
-        }),
+  updateArticle: async (id, data) => {
+    const article = get().articles.find((a) => a.id === id);
+    if (!article) return;
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'article', id, data: { ...article, ...data } }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      set({ articles: get().articles.map((a) => (a.id === id ? updated : a)) });
+    }
+  },
 
-      updateArticle: (id, data) =>
-        set({
-          articles: get().articles.map((a) => (a.id === id ? { ...a, ...data } : a)),
-        }),
+  deleteArticle: async (id) => {
+    const res = await fetch(`/api/cms?resource=article&id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      set({ articles: get().articles.filter((a) => a.id !== id) });
+    }
+  },
 
-      deleteArticle: (id) =>
-        set({ articles: get().articles.filter((a) => a.id !== id) }),
+  addArticle: async (article) => {
+    const res = await fetch('/api/cms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'article', data: article }),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      set({ articles: [...get().articles, created] });
+    }
+  },
 
-      addArticle: (article) =>
-        set({
-          articles: [
-            ...get().articles,
-            { ...article, id: `article-${Date.now()}` },
-          ],
-        }),
+  updateTestimonial: async (id, data) => {
+    const testimonial = get().testimonials.find((t) => t.id === id);
+    if (!testimonial) return;
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'testimonial', id, data: { ...testimonial, ...data } }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      set({ testimonials: get().testimonials.map((t) => (t.id === id ? updated : t)) });
+    }
+  },
 
-      updateTestimonial: (id, data) =>
-        set({
-          testimonials: get().testimonials.map((t) =>
-            t.id === id ? { ...t, ...data } : t
-          ),
-        }),
+  deleteTestimonial: async (id) => {
+    const res = await fetch(`/api/cms?resource=testimonial&id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      set({ testimonials: get().testimonials.filter((t) => t.id !== id) });
+    }
+  },
 
-      deleteTestimonial: (id) =>
-        set({ testimonials: get().testimonials.filter((t) => t.id !== id) }),
+  addTestimonial: async (testimonial) => {
+    const res = await fetch('/api/cms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'testimonial', data: testimonial }),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      set({ testimonials: [...get().testimonials, created] });
+    }
+  },
 
-      addTestimonial: (testimonial) =>
-        set({
-          testimonials: [
-            ...get().testimonials,
-            { ...testimonial, id: `testimonial-${Date.now()}` },
-          ],
-        }),
-
-      updateSiteSettings: (settings) =>
-        set({ siteSettings: { ...get().siteSettings, ...settings } }),
-
-      resetCMS: () =>
-        set({
-          pages: cmsPages,
-          articles: cmsArticles,
-          testimonials: cmsTestimonials,
-          siteSettings: defaultSiteSettings,
-        }),
-    }),
-    { name: 'factify-admin' }
-  )
-);
+  updateSiteSettings: async (settings) => {
+    const res = await fetch('/api/cms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'settings', data: settings }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      set({ siteSettings: updated });
+    }
+  },
+}));

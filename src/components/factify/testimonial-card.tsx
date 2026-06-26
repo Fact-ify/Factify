@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
-import type { Testimonial } from '@/data/mock/types';
+import type { Testimonial } from '@/types';
 
 interface TestimonialCardProps {
   testimonial: Testimonial;

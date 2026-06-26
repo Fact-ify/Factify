@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -8,21 +9,36 @@ import {
   FileText,
   Newspaper,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import AdminShell from '@/components/admin/admin-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/store/admin-store';
-import { dashboardSummary } from '@/data/mock/dashboard';
 
 export default function AdminOverviewPage() {
   const { pages, articles, testimonials, user } = useAdminStore();
+  const [stats, setStats] = useState({ totalSearches: 0, verifiedStories: 0, fakeNewsDetected: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  const stats = [
-    { label: 'Total Searches', value: dashboardSummary.totalSearches, icon: Search },
-    { label: 'Verified Stories', value: dashboardSummary.verifiedStories, icon: ShieldCheck },
-    { label: 'Fake News Detected', value: dashboardSummary.fakeNewsDetected, icon: AlertTriangle },
+  useEffect(() => {
+    fetch('/api/analytics')
+      .then((res) => res.json())
+      .then((data) => {
+        setStats({
+          totalSearches: data.totalSearches ?? 0,
+          verifiedStories: data.verifiedStories ?? 0,
+          fakeNewsDetected: data.fakeNewsDetected ?? 0,
+        });
+      })
+      .finally(() => setLoadingStats(false));
+  }, []);
+
+  const statCards = [
+    { label: 'Total Searches', value: stats.totalSearches, icon: Search },
+    { label: 'Verified Stories', value: stats.verifiedStories, icon: ShieldCheck },
+    { label: 'Fake News Detected', value: stats.fakeNewsDetected, icon: AlertTriangle },
     { label: 'CMS Pages', value: pages.length, icon: FileText },
   ];
 
@@ -37,16 +53,18 @@ export default function AdminOverviewPage() {
     <AdminShell title="Overview" description={`Welcome back, ${user?.name ?? 'Admin'}`}>
       <div className="space-y-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
+          {statCards.map((stat) => (
             <Card key={stat.label}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
                   <stat.icon className="h-5 w-5 text-factify-gold" />
                   <Badge variant="navy">Live</Badge>
                 </div>
-                <p className="text-2xl font-bold text-factify-navy">
-                  {stat.value.toLocaleString()}
-                </p>
+                {loadingStats ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-factify-gold" />
+                ) : (
+                  <p className="text-2xl font-bold text-factify-navy">{stat.value.toLocaleString()}</p>
+                )}
                 <p className="text-sm text-factify-gray-dark">{stat.label}</p>
               </CardContent>
             </Card>
@@ -67,9 +85,7 @@ export default function AdminOverviewPage() {
                 >
                   <span className="text-sm font-medium text-factify-navy">{link.label}</span>
                   <div className="flex items-center gap-2">
-                    {link.count !== null && (
-                      <Badge variant="neutral">{link.count}</Badge>
-                    )}
+                    {link.count !== null && <Badge variant="neutral">{link.count}</Badge>}
                     <ArrowRight className="h-4 w-4 text-factify-gray-dark" />
                   </div>
                 </Link>
@@ -91,9 +107,7 @@ export default function AdminOverviewPage() {
                     <p className="font-medium text-factify-navy">{page.title}</p>
                     <p className="text-xs text-factify-gray-dark">Updated {page.lastUpdated}</p>
                   </div>
-                  <Badge variant={page.status === 'published' ? 'success' : 'warning'}>
-                    {page.status}
-                  </Badge>
+                  <Badge variant={page.status === 'published' ? 'success' : 'warning'}>{page.status}</Badge>
                 </div>
               ))}
               <Button variant="secondary" size="sm" className="w-full mt-2" asChild>

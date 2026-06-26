@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Factify — Truth in Every Story',
+    default: 'Factify | Truth in Every Story',
     template: '%s | Factify',
   },
   description:

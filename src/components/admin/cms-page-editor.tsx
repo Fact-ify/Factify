@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CMSPage } from '@/data/mock/cms-content';
+import type { CMSPage } from '@/types';
 import { useAdminStore } from '@/store/admin-store';
 
 interface CMSPageEditorProps {

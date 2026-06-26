@@ -24,9 +24,9 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer className="bg-factify-navy text-white">
-      <div className="wrapper py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
-          <div className="lg:col-span-2">
+      <div className="wrapper py-12 sm:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10">
+          <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-factify-gold">
                 <ShieldCheck className="h-5 w-5 text-factify-navy" />

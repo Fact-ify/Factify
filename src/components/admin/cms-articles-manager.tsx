@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStore } from '@/store/admin-store';
-import type { CMSArticle } from '@/data/mock/cms-content';
-import { newsSources } from '@/data/mock/sources';
+import type { CMSArticle } from '@/types';
+import { newsSources } from '@/lib/sources';
 
 const emptyArticle: Omit<CMSArticle, 'id'> = {
   title: '',
