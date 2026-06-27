@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20.19+"
+  NODE_VERSION: "20.19.0"
   DATABASE_URL: postgresql://factify:factify@localhost:5432/factify
   AUTH_SECRET: ci-placeholder-secret-at-least-32-chars
 
