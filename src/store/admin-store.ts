@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import type { CMSPage, CMSArticle, CMSTestimonial, CMSTeamMember, CMSSiteSettings } from '@/types';
 
 interface AdminUser {
@@ -39,7 +40,16 @@ interface AdminStore {
   updateTeamMember: (id: string, data: Partial<CMSTeamMember>) => Promise<void>;
   deleteTeamMember: (id: string) => Promise<void>;
   addTeamMember: (member: Omit<CMSTeamMember, 'id'>) => Promise<void>;
-  updateSiteSettings: (settings: Partial<CMSSiteSettings>) => Promise<void>;
+  updateSiteSettings: (settings: Partial<CMSSiteSettings>) => Promise<boolean>;
+}
+
+async function parseCmsError(res: Response) {
+  try {
+    const data = await res.json();
+    return (data as { error?: string }).error ?? 'Request failed';
+  } catch {
+    return 'Request failed';
+  }
 }
 
 export const useAdminStore = create<AdminStore>((set, get) => ({
@@ -124,8 +134,11 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   },
 
   loadCmsData: async () => {
-    const res = await fetch('/api/cms');
-    if (!res.ok) return;
+    const res = await fetch('/api/cms', { cache: 'no-store' });
+    if (!res.ok) {
+      toast.error('Could not load CMS data. Check DATABASE_URL and run db:push.');
+      return;
+    }
     const data = await res.json();
     set({
       pages: data.pages ?? [],
@@ -145,7 +158,10 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const page = await res.json();
       set({ pages: get().pages.map((p) => (p.id === pageId ? page : p)) });
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 
   updatePageStatus: async (pageId, status) => {
@@ -157,7 +173,10 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const page = await res.json();
       set({ pages: get().pages.map((p) => (p.id === pageId ? page : p)) });
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 
   updateArticle: async (id, data) => {
@@ -228,7 +247,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
 
   updateTeamMember: async (id, data) => {
     const member = get().teamMembers.find((m) => m.id === id);
-    if (!member) return;
+    if (!member) return false;
     const res = await fetch('/api/cms', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -237,14 +256,21 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const updated = await res.json();
       set({ teamMembers: get().teamMembers.map((m) => (m.id === id ? updated : m)) });
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 
   deleteTeamMember: async (id) => {
     const res = await fetch(`/api/cms?resource=team-member&id=${id}`, { method: 'DELETE' });
     if (res.ok) {
       set({ teamMembers: get().teamMembers.filter((m) => m.id !== id) });
+      toast.success('Team member removed');
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 
   addTeamMember: async (member) => {
@@ -256,7 +282,11 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const created = await res.json();
       set({ teamMembers: [...get().teamMembers, created].sort((a, b) => a.sortIndex - b.sortIndex) });
+      toast.success('Team member added');
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 
   updateSiteSettings: async (settings) => {
@@ -268,6 +298,10 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     if (res.ok) {
       const updated = await res.json();
       set({ siteSettings: updated });
+      toast.success('Site settings saved');
+      return true;
     }
+    toast.error(await parseCmsError(res));
+    return false;
   },
 }));

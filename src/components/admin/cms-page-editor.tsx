@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Save, Eye } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Save, Eye, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,18 +15,61 @@ interface CMSPageEditorProps {
   page: CMSPage;
 }
 
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
 export default function CMSPageEditor({ page }: CMSPageEditorProps) {
   const { updatePageField, updatePageStatus } = useAdminStore();
-  const [saved, setSaved] = useState(false);
+  const [fields, setFields] = useState(page.fields);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Map<string, string | number>>(new Map());
 
-  const handleFieldChange = (fieldId: string, value: string | number) => {
-    updatePageField(page.id, fieldId, value);
-    setSaved(false);
+  useEffect(() => {
+    setFields(page.fields);
+  }, [page.id, page.fields]);
+
+  const flushPending = async () => {
+    const pending = new Map(pendingRef.current);
+    if (pending.size === 0) return;
+
+    pendingRef.current.clear();
+    setSaveState('saving');
+
+    try {
+      for (const [fieldId, value] of pending.entries()) {
+        const ok = await updatePageField(page.id, fieldId, value);
+        if (!ok) {
+          setSaveState('error');
+          return;
+        }
+      }
+      const updatedPage = useAdminStore.getState().pages.find((p) => p.id === page.id);
+      if (updatedPage) setFields(updatedPage.fields);
+      setSaveState('saved');
+      toast.success('Page content saved to database');
+      setTimeout(() => setSaveState('idle'), 2000);
+    } catch (error) {
+      setSaveState('error');
+      toast.error(error instanceof Error ? error.message : 'Failed to save page content');
+    }
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleFieldChange = (fieldId: string, value: string | number) => {
+    setFields((prev) =>
+      prev.map((f) => (f.id === fieldId ? { ...f, value } : f))
+    );
+    pendingRef.current.set(fieldId, value);
+    setSaveState('idle');
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      flushPending();
+    }, 800);
+  };
+
+  const handleManualSave = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    flushPending();
   };
 
   return (
@@ -39,15 +83,22 @@ export default function CMSPageEditor({ page }: CMSPageEditorProps) {
             </Badge>
           </div>
           <p className="text-sm text-factify-gray-dark">
-            {page.route} · Last updated {page.lastUpdated}
+            {page.route} | Last updated {page.lastUpdated}
           </p>
+          {page.slug === 'home' && (
+            <p className="text-xs text-factify-gold mt-1">
+              Home page fields also update the live hero and CTA on the site.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <select
             value={page.status}
-            onChange={(e) =>
-              updatePageStatus(page.id, e.target.value as 'published' | 'draft')
-            }
+            onChange={async (e) => {
+              const status = e.target.value as 'published' | 'draft';
+              await updatePageStatus(page.id, status);
+              toast.success(`Page marked as ${status}`);
+            }}
             className="h-10 rounded-lg border border-factify-gray px-3 text-sm text-factify-navy focus:outline-none focus:ring-2 focus:ring-factify-gold"
             aria-label="Page status"
           >
@@ -60,9 +111,18 @@ export default function CMSPageEditor({ page }: CMSPageEditorProps) {
               Preview
             </a>
           </Button>
-          <Button size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4" />
-            {saved ? 'Saved!' : 'Save Changes'}
+          <Button size="sm" onClick={handleManualSave} disabled={saveState === 'saving'}>
+            {saveState === 'saving' ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                {saveState === 'saved' ? 'Saved!' : 'Save now'}
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -72,7 +132,7 @@ export default function CMSPageEditor({ page }: CMSPageEditorProps) {
           <CardTitle className="text-base">Page Content</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {page.fields.map((field) => (
+          {fields.map((field) => (
             <div key={field.id}>
               <Label htmlFor={field.id}>{field.label}</Label>
               {field.type === 'textarea' ? (

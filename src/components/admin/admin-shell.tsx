@@ -15,11 +15,17 @@ interface AdminShellProps {
 
 export default function AdminShell({ children, title, description }: AdminShellProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, checkSession } = useAdminStore();
+  const { isAuthenticated, isLoading, checkSession, loadCmsData } = useAdminStore();
 
   useEffect(() => {
     checkSession();
   }, [checkSession]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCmsData();
+    }
+  }, [isAuthenticated, loadCmsData]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
