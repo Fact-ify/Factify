@@ -19,10 +19,12 @@ export default function CMSSettingsForm() {
     if (siteSettings) setForm(siteSettings);
   }, [siteSettings]);
 
-  const handleSave = () => {
-    updateSiteSettings(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    const ok = await updateSiteSettings(form);
+    if (ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
   return (

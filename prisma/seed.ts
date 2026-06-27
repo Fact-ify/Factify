@@ -9,31 +9,38 @@ import {
 } from '../src/lib/cms/defaults';
 
 async function main() {
-  await prisma.siteSettings.upsert({
-    where: { id: 'default' },
-    update: defaultSiteSettings,
-    create: { id: 'default', ...defaultSiteSettings },
-  });
+  const existingSettings = await prisma.siteSettings.findUnique({ where: { id: 'default' } });
+  if (!existingSettings) {
+    await prisma.siteSettings.create({ data: { id: 'default', ...defaultSiteSettings } });
+    console.log('Created default site settings.');
+  } else {
+    console.log('Site settings already exist — skipped (your CMS edits are preserved).');
+  }
 
   for (const page of defaultCmsPages) {
-    await prisma.cmsPage.upsert({
-      where: { slug: page.slug },
-      update: {
-        title: page.title,
-        route: page.route,
-        description: page.description,
-        status: page.status,
-        fields: page.fields as object,
-      },
-      create: {
-        slug: page.slug,
-        title: page.title,
-        route: page.route,
-        description: page.description,
-        status: page.status,
-        fields: page.fields as object,
-      },
-    });
+    const existing = await prisma.cmsPage.findUnique({ where: { slug: page.slug } });
+    if (!existing) {
+      await prisma.cmsPage.create({
+        data: {
+          slug: page.slug,
+          title: page.title,
+          route: page.route,
+          description: page.description,
+          status: page.status,
+          fields: page.fields as object,
+        },
+      });
+      console.log(`Created CMS page: ${page.slug}`);
+    } else {
+      await prisma.cmsPage.update({
+        where: { slug: page.slug },
+        data: {
+          title: page.title,
+          route: page.route,
+          description: page.description,
+        },
+      });
+    }
   }
 
   const articleCount = await prisma.cmsArticle.count();
@@ -50,6 +57,7 @@ async function main() {
         },
       });
     }
+    console.log('Seeded default articles.');
   }
 
   const testimonialCount = await prisma.cmsTestimonial.count();
@@ -57,17 +65,23 @@ async function main() {
     for (const testimonial of defaultCmsTestimonials) {
       await prisma.cmsTestimonial.create({ data: testimonial });
     }
+    console.log('Seeded default testimonials.');
   }
 
-  const teamCount = await prisma.cmsTeamMember.count();
-  if (teamCount === 0) {
-    for (const member of defaultCmsTeamMembers) {
-      await prisma.cmsTeamMember.create({ data: member });
+  try {
+    const teamCount = await prisma.cmsTeamMember.count();
+    if (teamCount === 0) {
+      for (const member of defaultCmsTeamMembers) {
+        await prisma.cmsTeamMember.create({ data: member });
+      }
+      console.log('Seeded default team members.');
     }
+  } catch {
+    console.warn('Team table not ready — run npm run db:push first, then seed again.');
   }
 
   console.log('Seed complete.');
-  console.log('Create your admin account at /admin/login if none exists yet.');
+  console.log('Create your admin account at /admin/setup if none exists yet.');
 }
 
 main()
